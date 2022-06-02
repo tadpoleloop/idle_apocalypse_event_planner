@@ -20,4 +20,5 @@ cdef struct EventInfo:
     Resources speed_upgrade_costs[MAX_LEVEL]
     Resources damage_upgrade_costs[MAX_LEVEL]
     Resources champion_revenue[MAX_CHAMPIONS][MAX_LEVEL]
+    Resources champion_revenue_swap[MAX_CHAMPIONS][MAX_LEVEL]
     int champion_duration[MAX_CHAMPIONS]
