@@ -12,7 +12,7 @@ cdef struct ChampionInfo:
     int has_swap
     Resources upgrade_costs[MAX_LEVEL]
     Resources revenue[MAX_LEVEL]
-    Resources revenue_swap[MAX_LEVEL]
+    Resources revenue_toggle[MAX_LEVEL]
     
 cdef struct ResourceInfo:
     char name[30]

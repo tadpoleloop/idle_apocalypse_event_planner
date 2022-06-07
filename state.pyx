@@ -2,7 +2,7 @@ from cpython cimport PyBytes_AsString
 from libc.string cimport strcpy
 from event_info cimport EventInfo, MAX_RESOURCES, MAX_CHAMPIONS, MAX_LEVEL, ChampionInfo, ResourceInfo, SpeedInfo, DamageInfo
 from resources cimport *
-from move cimport Move, CHAMPION, RESOURCE, SPEED, DAMAGE, WAIT
+from move cimport Move, CHAMPION, RESOURCE, SPEED, DAMAGE, TOGGLE, WAIT
 
 cdef double max_dps = -1
 
@@ -38,7 +38,7 @@ cdef set_champion_info(ChampionInfo *c, dict d):
     for i in range(c.max_level):
         set_resources(&c.upgrade_costs[i], d["upgrade_costs"][i])
         set_resources(&c.revenue[i], d["revenue"][i])
-        set_resources(&c.revenue_swap[i], d["revenue_swap"][i])
+        set_resources(&c.revenue_toggle[i], d["revenue_toggle"][i])
         
 cdef set_resource_info(ResourceInfo *r, dict d):
     cdef int i
@@ -93,6 +93,7 @@ cdef class State:
         cdef int i
         for i in range(MAX_CHAMPIONS):
             self.champion_levels[i] = 0
+            self.toggles[i] = False
         for i in range(MAX_RESOURCES):
             self.resource_levels[i] = 0
         self.speed_level = 0
@@ -107,6 +108,7 @@ cdef class State:
         self.ad_boost = state.ad_boost
         self.gem_level = state.gem_level
         self.champion_levels = state.champion_levels
+        self.toggles = state.toggles
         self.resource_levels = state.resource_levels
         self.speed_level = state.speed_level
         self.damage_level = state.damage_level
@@ -128,6 +130,8 @@ cdef class State:
             cost = self.event_info.speed.upgrade_costs[move.level]
         elif move.target == DAMAGE:
             cost = self.event_info.damage.upgrade_costs[move.level]
+        elif move.target == TOGGLE:
+            return 1
         elif move.target == WAIT:
             return self.time
         needed = sub_resources(cost, self.resources)
@@ -138,7 +142,7 @@ cdef class State:
             if needed_view.view[i] <= 0:
                 continue
             if rps_view.view[i] <= 0:
-                duration = 2 * self.time
+                duration = 2 * self.time #should signal that this move can't happen
                 break
             resource_duration = <int>(needed_view.view[i] / rps_view.view[i])
             if resource_duration > duration:
@@ -183,6 +187,7 @@ cdef class State:
                 n_moves += 1
             if level == 0:
                 break
+        
         for index in range(self.event_info.n_resources):
             level = self.resource_levels[index]
             if level == self.event_info.resources[index].max_level:
@@ -230,9 +235,16 @@ cdef class State:
                 moves[i] = Move(DAMAGE, 0, level)
                 durations[i] = duration
                 n_moves += 1
+                
         if n_moves == 0:
             n_moves = 1
             moves[0] = Move(WAIT, 0, 0)
+            
+        for index in range(self.event_info.n_champions):
+            if self.event_info.champions[index].has_swap:
+                moves[n_moves] = Move(TOGGLE, index, 0)
+                n_moves += 1
+                
         return n_moves
     
     cpdef void update_resources_per_second(self) except *:
@@ -243,7 +255,10 @@ cdef class State:
         self.resources_per_second = Resources(0, 0, 0, 0, 0)
         for i in range(self.event_info.n_champions):
             if self.champion_levels[i] > 0:
-                revenue = self.event_info.champions[i].revenue[self.champion_levels[i] - 1]
+                if self.toggles[i]:
+                    revenue = self.event_info.champions[i].revenue_toggle[self.champion_levels[i] - 1]
+                else:
+                    revenue = self.event_info.champions[i].revenue[self.champion_levels[i] - 1]
                 #we are assuming that a champion only makes one kind of resource
                 for j in range(MAX_RESOURCES):
                     if revenue_view.view[j] > 0:
@@ -302,6 +317,10 @@ cdef class State:
             cost = self.event_info.damage.upgrade_costs[move.level]
             self.damage_level += 1
             
+        elif move.target == TOGGLE:
+            cost = Resources(0, 0, 0, 0, 0)
+            self.toggles[move.index] ^= 1
+            
         elif move.target == WAIT:
             cost = Resources(0, 0, 0, 0, 0)
             
@@ -347,13 +366,13 @@ cdef class State:
                 return TIME_CONSTANT - goal_time
         return TIME_CONSTANT
     
-    cpdef double upper_bound(self):
-        """
-        course upper bound taking maximum damage output times time for remainder of event
-        """
-        return self.resources.damage + self.time * self.max_dps[0]
+#     cpdef double upper_bound(self):
+#         """
+#         course upper bound taking maximum damage output times time for remainder of event
+#         """
+#         return self.resources.damage + self.time * self.max_dps[0]
     
-    cpdef double lower_bound(self):
-        return self.resources.damage + self.time * self.resources_per_second.damage
+#     cpdef double lower_bound(self):
+#         return self.resources.damage + self.time * self.resources_per_second.damage
     
     

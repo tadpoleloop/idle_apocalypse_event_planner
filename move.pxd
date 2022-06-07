@@ -1,5 +1,5 @@
 cpdef enum move_target:
-    CHAMPION, RESOURCE, SPEED, DAMAGE, WAIT
+    CHAMPION, RESOURCE, SPEED, DAMAGE, TOGGLE, WAIT
     
 cdef struct Move:
     move_target target

@@ -136,7 +136,7 @@ def print_plan(root, moves):
     goal_projected_printed = False
     COLUMN_WIDTHS = [13, 40, 17, 32, 7]
     WAIT_MOVE = {"target" : move_target.WAIT, "index": 0, "level": 0}
-    Colors.LEGEND = [Colors.BLUE, Colors.GREEN, Colors.RED, Colors.GOLD]
+    LEGEND = [Colors.BLUE, Colors.GREEN, Colors.RED, Colors.GOLD]
 
 
     for i, header_name in enumerate(["Time", "Resources", "Upgrade", "Cost", "Urgency"]):
@@ -179,22 +179,22 @@ def print_plan(root, moves):
                 " "* COLUMN_WIDTHS[3] + "|" + " " * COLUMN_WIDTHS[4] + "|\n"
             )
         if move["target"] == move_target.CHAMPION:
-            upgrade = f"{move['index'] + 1}. {event_info['champion_names'][move['index']].decode()}"
-            cost = event_info["champion_upgrade_costs"][move["index"]][move["level"]]
+            upgrade = f"{move['index'] + 1}. {event_info['champions'][move['index']]['name'].decode()}"
+            cost = event_info["champions"][move["index"]]["upgrade_costs"][move["level"]]
 
         elif move["target"] == move_target.RESOURCE:
             upgrade = (
-                Colors.LEGEND[move['index']] + 
-                f"{event_info['resource_names'][move['index']].decode():<{COLUMN_WIDTHS[2]}}" + 
+                LEGEND[move['index']] + 
+                f"{event_info['resources'][move['index']]['name'].decode():<{COLUMN_WIDTHS[2]}}" + 
                 Colors.RESET
             )
-            cost = event_info["resource_upgrade_costs"][move["index"]][move["level"]]
+            cost = event_info["resources"][move["index"]]["upgrade_costs"][move["level"]]
         elif move["target"] == move_target.SPEED:
             upgrade = Colors.rainbow(f"{'speed':<{COLUMN_WIDTHS[2]}}")
-            cost = event_info["speed_upgrade_costs"][move["level"]]
+            cost = event_info["speed"]["upgrade_costs"][move["level"]]
         elif move["target"] == move_target.DAMAGE:
             upgrade = Colors.color(f"{'damage':{COLUMN_WIDTHS[2]}}", 'bold')
-            cost = event_info["damage_upgrade_costs"][move["level"]]
+            cost = event_info["damage"]["upgrade_costs"][move["level"]]
         elif move["target"] == move_target.WAIT:
             upgrade = "wait"
             cost = Resources()

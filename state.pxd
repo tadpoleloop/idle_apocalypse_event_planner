@@ -25,6 +25,7 @@ cdef class State:
         int ad_boost
         int gem_level
         int champion_levels[MAX_CHAMPIONS]
+        bint toggles[MAX_CHAMPIONS]
         int resource_levels[MAX_RESOURCES]
         int speed_level
         int damage_level
@@ -49,6 +50,6 @@ cdef class State:
     
     cpdef double time_moves(self, list moves)
                 
-    cpdef double upper_bound(self)
+#     cpdef double upper_bound(self)
     
-    cpdef double lower_bound(self)
+#     cpdef double lower_bound(self)
