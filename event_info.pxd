@@ -4,21 +4,34 @@ cdef enum:
     MAX_CHAMPIONS = 8
     MAX_RESOURCES = 4
     MAX_LEVEL = 10
-
+    
+cdef struct ChampionInfo:
+    char name[30]
+    int duration
+    int max_level
+    int has_swap
+    Resources upgrade_costs[MAX_LEVEL]
+    Resources revenue[MAX_LEVEL]
+    Resources revenue_swap[MAX_LEVEL]
+    
+cdef struct ResourceInfo:
+    char name[30]
+    int max_level
+    Resources upgrade_costs[MAX_LEVEL]
+    
+cdef struct SpeedInfo:
+    int max_level
+    Resources upgrade_costs[MAX_LEVEL]
+    
+cdef struct DamageInfo:
+    int max_level
+    Resources upgrade_costs[MAX_LEVEL]
+    
 cdef struct EventInfo:
     unsigned long long goal
-    char champion_names[MAX_CHAMPIONS][30]
-    char resource_names[MAX_RESOURCES][30]
-    int n_resources
     int n_champions
-    int champion_max_level[MAX_CHAMPIONS]
-    int resource_max_level[MAX_RESOURCES]
-    int speed_max_level
-    int damage_max_level
-    Resources champion_upgrade_costs[MAX_CHAMPIONS][MAX_LEVEL]
-    Resources resource_upgrade_costs[MAX_RESOURCES][MAX_LEVEL]
-    Resources speed_upgrade_costs[MAX_LEVEL]
-    Resources damage_upgrade_costs[MAX_LEVEL]
-    Resources champion_revenue[MAX_CHAMPIONS][MAX_LEVEL]
-    Resources champion_revenue_swap[MAX_CHAMPIONS][MAX_LEVEL]
-    int champion_duration[MAX_CHAMPIONS]
+    int n_resources
+    ChampionInfo champions[MAX_CHAMPIONS]
+    ResourceInfo resources[MAX_RESOURCES]
+    SpeedInfo speed
+    DamageInfo damage

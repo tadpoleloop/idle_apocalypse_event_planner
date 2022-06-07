@@ -1,4 +1,6 @@
-from event_info cimport EventInfo, MAX_RESOURCES, MAX_CHAMPIONS, MAX_LEVEL
+from cpython cimport PyBytes_AsString
+from libc.string cimport strcpy
+from event_info cimport EventInfo, MAX_RESOURCES, MAX_CHAMPIONS, MAX_LEVEL, ChampionInfo, ResourceInfo, SpeedInfo, DamageInfo
 from resources cimport *
 from move cimport Move, CHAMPION, RESOURCE, SPEED, DAMAGE, WAIT
 
@@ -6,11 +8,12 @@ cdef double max_dps = -1
 
 cpdef calculate_max_dps():
     global max_dps
+    cdef int i
     max_dps = 0
     for i in range(event_info.n_champions):
-        max_dps += event_info.champion_revenue[i][event_info.champion_max_level[i]-1].damage
-    max_dps *= (1 + 0.25 * event_info.damage_max_level)
-    max_dps /= (1 - 0.25 - 0.05 * event_info.speed_max_level)
+        max_dps += event_info.champions[i].revenue[event_info.champions[i].max_level - 1].damage
+    max_dps *= (1 + 0.25 * event_info.damage.max_level)
+    max_dps /= (1 - 0.25 - 0.05 * event_info.speed.max_level)
     
 cdef EventInfo event_info
 
@@ -20,6 +23,42 @@ cdef EventInfo _get_event_info():
 def get_event_info():
     return event_info
 
+#helper functions for setting event info from json file
+#maybe the helper functions should live in the definition files
+
+cdef set_resources(Resources *r, list l):
+    r[0] = Resources(l[0], l[1], l[2], l[3], l[4])
+
+cdef set_champion_info(ChampionInfo *c, dict d):
+    cdef int i
+    c.name = d['name'].encode('UTF-8') + b'\0' * (30 - len(d['name']))
+    c.duration = d["duration"]
+    c.max_level = d["max_level"]
+    c.has_swap = d["has_swap"]
+    for i in range(c.max_level):
+        set_resources(&c.upgrade_costs[i], d["upgrade_costs"][i])
+        set_resources(&c.revenue[i], d["revenue"][i])
+        set_resources(&c.revenue_swap[i], d["revenue_swap"][i])
+        
+cdef set_resource_info(ResourceInfo *r, dict d):
+    cdef int i
+    r.name = d['name'].encode('UTF-8') + b'\0' * (30 - len(d['name']))
+    r.max_level = d["max_level"]
+    for i in range(r.max_level):
+        set_resources(&r.upgrade_costs[i], d["upgrade_costs"][i])
+        
+cdef set_damage_info(DamageInfo *d, dict py_d):
+    cdef int i
+    d.max_level = py_d["max_level"]
+    for i in range(d.max_level):
+        set_resources(&d.upgrade_costs[i], py_d["upgrade_costs"][i])
+
+cdef set_speed_info(SpeedInfo *s, dict d):
+    cdef int i
+    s.max_level = d["max_level"]
+    for i in range(s.max_level):
+        set_resources(&s.upgrade_costs[i], d["upgrade_costs"][i])
+    
 def set_event_info(d):
     """
     converts a python dictionary to an EventInfo struct
@@ -30,44 +69,12 @@ def set_event_info(d):
     event_info.n_resources = d["n_resources"]
     event_info.n_champions = d["n_champions"]
     for i in range(d["n_champions"]):
-        event_info.champion_max_level[i] = len(d["champion_upgrade_costs"][i])
+        #ugly string hacking for python string to c string
+        set_champion_info(&event_info.champions[i], d["champions"][i])
     for i in range(d["n_resources"]):
-        event_info.resource_max_level[i] = len(d["resource_upgrade_costs"][i])
-    event_info.speed_max_level = len(d["speed_upgrade_costs"])
-    event_info.damage_max_level = len(d["damage_upgrade_costs"])
-    for i in range(d["n_champions"]):
-        for j in range(event_info.champion_max_level[i]):
-            view.data = &event_info.champion_upgrade_costs[i][j]
-            for k in range(5):
-                view.view[k] = d["champion_upgrade_costs"][i][j][k]
-    for i in range(d["n_resources"]):
-        for j in range(event_info.resource_max_level[i]):
-            view.data = &event_info.resource_upgrade_costs[i][j]
-            for k in range(5):
-                view.view[k] = d["resource_upgrade_costs"][i][j][k]
-    for j in range(event_info.speed_max_level):
-        view.data = &event_info.speed_upgrade_costs[j]
-        for k in range(5):
-            view.view[k] = d["speed_upgrade_costs"][j][k]
-    for j in range(event_info.damage_max_level):
-        view.data = &event_info.damage_upgrade_costs[j]
-        for k in range(5):
-            view.view[k] = d["damage_upgrade_costs"][j][k]
-    for i in range(d["n_champions"]):
-        for j in range(event_info.champion_max_level[i]):
-            view.data = &event_info.champion_revenue[i][j]
-            for k in range(5):
-                view.view[k] = d["champion_revenue"][i][j][k]
-    for k in range(d["n_champions"]):
-        event_info.champion_duration[k] = d["champion_duration"][k]
-    for k in range(d["n_champions"]):
-        for l in range(len(d["champion_names"][k])):
-            event_info.champion_names[k][l] = d["champion_names"][k].encode("UTF-8")[l]
-        event_info.champion_names[k][l+1] = 0
-    for k in range(d["n_resources"]):
-        for l in range(len(d["resource_names"][k])):
-            event_info.resource_names[k][l] = d["resource_names"][k].encode("UTF-8")[l]
-        event_info.resource_names[k][l+1] = 0
+        set_resource_info(&event_info.resources[i], d["resources"][i])
+    set_speed_info(&event_info.speed, d["speed"])
+    set_damage_info(&event_info.damage, d["damage"])
     calculate_max_dps()
 
 cdef class State:
@@ -114,13 +121,13 @@ cdef class State:
             int i, duration, resource_duration
             ResourcesView needed_view, rps_view
         if move.target == CHAMPION:
-            cost = self.event_info[0].champion_upgrade_costs[move.index][move.level]
+            cost = self.event_info.champions[move.index].upgrade_costs[move.level]
         elif move.target == RESOURCE:
-            cost = self.event_info[0].resource_upgrade_costs[move.index][move.level]
+            cost = self.event_info.resources[move.index].upgrade_costs[move.level]
         elif move.target == SPEED:
-            cost = self.event_info[0].speed_upgrade_costs[move.level]
+            cost = self.event_info.speed.upgrade_costs[move.level]
         elif move.target == DAMAGE:
-            cost = self.event_info[0].damage_upgrade_costs[move.level]
+            cost = self.event_info.damage.upgrade_costs[move.level]
         elif move.target == WAIT:
             return self.time
         needed = sub_resources(cost, self.resources)
@@ -157,9 +164,9 @@ cdef class State:
             double durations[100]
             double duration
         
-        for index in range(self.event_info[0].n_champions):
+        for index in range(self.event_info.n_champions):
             level = self.champion_levels[index]
-            if level == self.event_info[0].champion_max_level[index]:
+            if level == self.event_info.champions[index].max_level:
                 continue
             duration = self.get_duration(Move(CHAMPION, index, level)) 
             if duration < self.time:
@@ -176,9 +183,9 @@ cdef class State:
                 n_moves += 1
             if level == 0:
                 break
-        for index in range(self.event_info[0].n_resources):
+        for index in range(self.event_info.n_resources):
             level = self.resource_levels[index]
-            if level == self.event_info[0].resource_max_level[index]:
+            if level == self.event_info.resources[index].max_level:
                 continue
             duration = self.get_duration(Move(RESOURCE, index, level)) 
             if duration < self.time:
@@ -194,7 +201,7 @@ cdef class State:
                 durations[i] = duration
                 n_moves += 1
         level = self.speed_level
-        if level < self.event_info[0].speed_max_level:
+        if level < self.event_info.speed.max_level:
             duration = self.get_duration(Move(SPEED, 0, level)) 
             if duration < self.time:
                 for i in range(n_moves):
@@ -209,7 +216,7 @@ cdef class State:
                 durations[i] = duration
                 n_moves += 1
         level = self.damage_level
-        if level < self.event_info[0].damage_max_level:
+        if level < self.event_info.damage.max_level:
             duration = self.get_duration(Move(DAMAGE, 0, level)) 
             if duration < self.time:
                 for i in range(n_moves):
@@ -234,16 +241,16 @@ cdef class State:
         cdef ResourcesView revenue_view
         revenue_view.data = &revenue
         self.resources_per_second = Resources(0, 0, 0, 0, 0)
-        for i in range(self.event_info[0].n_champions):
+        for i in range(self.event_info.n_champions):
             if self.champion_levels[i] > 0:
-                revenue = self.event_info[0].champion_revenue[i][self.champion_levels[i] - 1]
+                revenue = self.event_info.champions[i].revenue[self.champion_levels[i] - 1]
                 #we are assuming that a champion only makes one kind of resource
                 for j in range(MAX_RESOURCES):
                     if revenue_view.view[j] > 0:
                         revenue_view.view[j] += self.resource_levels[j] + self.gem_level
                 self.resources_per_second = add_resources(
                     self.resources_per_second, 
-                    mul_resources(revenue, 1. / self.event_info[0].champion_duration[i])
+                    mul_resources(revenue, 1. / self.event_info.champions[i].duration)
                 )
         self.resources_per_second.damage *= (1 + 0.25 * self.damage_level)
         self.resources_per_second = mul_resources(
@@ -280,19 +287,19 @@ cdef class State:
             cost = Resources(0, 0, 0, 0, 0)
         
         elif move.target == CHAMPION:
-            cost = self.event_info[0].champion_upgrade_costs[move.index][move.level]
+            cost = self.event_info.champions[move.index].upgrade_costs[move.level]
             self.champion_levels[move.index] += 1
         
         elif move.target == RESOURCE:
-            cost = self.event_info[0].resource_upgrade_costs[move.index][move.level]
+            cost = self.event_info.resources[move.index].upgrade_costs[move.level]
             self.resource_levels[move.index] += 1
             
         elif move.target == SPEED:
-            cost = self.event_info[0].speed_upgrade_costs[move.level]
+            cost = self.event_info.speed.upgrade_costs[move.level]
             self.speed_level += 1
             
         elif move.target == DAMAGE:
-            cost = self.event_info[0].damage_upgrade_costs[move.level]
+            cost = self.event_info.damage.upgrade_costs[move.level]
             self.damage_level += 1
             
         elif move.target == WAIT:
@@ -308,28 +315,34 @@ cdef class State:
         self.update_resources_per_second()
 
     cpdef double score_moves(self, list moves):
+        """
+        Simulate move plan until time runs out
+        """
         state = State().copy(self)
         for move in moves:
             state.apply_move(move)
         return state.resources.damage
     
     cpdef double time_moves(self, list moves):
+        """
+        Simulate move plan and then interpolate the end-time
+        """
         state = State().copy(self)
         TIME_CONSTANT = 100 * 24 * 3600
         state.time = TIME_CONSTANT
-        if state.resources.damage >= state.event_info[0].goal:
+        if state.resources.damage >= state.event_info.goal:
             return 0
         for move in moves:
             start_damage = state.resources.damage
             start_time = state.time
             state.apply_move(move)
             #interpolate time
-            if state.resources.damage >= state.event_info[0].goal:
+            if state.resources.damage >= state.event_info.goal:
                 end_damage = state.resources.damage
                 end_time = state.time
                 goal_time = (
                     start_time + 
-                    (end_time - start_time) / (end_damage - start_damage) * (state.event_info[0].goal - start_damage)
+                    (end_time - start_time) / (end_damage - start_damage) * (state.event_info.goal - start_damage)
                 )
                 return TIME_CONSTANT - goal_time
         return TIME_CONSTANT
