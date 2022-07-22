@@ -5,9 +5,9 @@ from move cimport Move, CHAMPION, RESOURCE, SPEED, DAMAGE, WAIT
 from string_utils import pretty_print_time, pretty_print_number
 from colors import Colors
 
-cdef double max_dps = -1
+# cdef double max_dps = -1
 
-cpdef calculate_max_dps()
+# cpdef calculate_max_dps()
     
 cdef EventInfo event_info
 
@@ -28,9 +28,10 @@ cdef class State:
         bint toggles[MAX_CHAMPIONS]
         int resource_levels[MAX_RESOURCES]
         int speed_level
+        int speed2_level
         int damage_level
-        Move log[100]
-        int ilog
+#         Move log[1000]
+#         int ilog
         
     cpdef State copy(self, State state)
                 
@@ -41,10 +42,8 @@ cdef class State:
     cdef int _legal_moves(self, Move *moves) except *
     
     cpdef void update_resources_per_second(self) except *
-    
-    cpdef apply_move(self, dict pmove)
-        
-    cdef void _apply_move(self, Move move) except *
+            
+    cpdef void apply_move(self, Move move) except *
 
     cpdef double score_moves(self, list moves)
     
