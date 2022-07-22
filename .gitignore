@@ -2,5 +2,6 @@
 *.c
 *.pyd
 *.html
+*.csv
 __pycache__
 build/
