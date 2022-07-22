@@ -36,11 +36,13 @@ def pretty_print_number(num):
     
 def pretty_print_time(t):
     t = int(t)
+    negative = t<0
+    t = abs(t)
     days = t // 86400
     hours = (t % 86400) // 3600
     minutes = (t%3600) // 60
     seconds = t % 60
-    s = ""
+    s = "-" if negative else ""
     if days > 0:
         s += f"{days}d"
     if hours > 0:
@@ -65,35 +67,37 @@ def print_resources(resources, print_damage = 1):
 class Dashboard:
     def __init__(self):
         self.progress = 0
+        self.event = ""
         self.step = ""
-        self.score = 0
+        self.moves = []
         self.last_frame = time()
-        self.fps = 24
+        self.fps = 12
         self.state = State()
     def set_progress(self, progress):
         self.progress = progress
     def set_step(self, step):
         self.step = step
-    def set_score(self, score):
-        self.score = score
     def set_moves(self, moves):
         self.moves = moves
     def set_event(self, event):
         self.event = event
-    def set_goal(self, goal):
-        self.goal = goal
     def set_state(self, state):
         self.state = State().copy(state)
     def show(self, force = False):
         if time() - self.last_frame > 1/self.fps or force:
             clear_output(wait = True)
+            score = self.state.score_moves(self.moves)
+            score_t = self.state.time_moves(self.moves)
+            goal = get_event_info()["goal"]
             print(
                 f"event: {self.event}" +
-                f"\ngoal: {pretty_print_number(self.goal)}" + 
+                f"\ngem level: {self.state.gem_level}" +
+                f"\ngoal: {pretty_print_number(goal)}" + 
                 f"\n{self.step}" + 
-                (f"\n{100 * self.progress:5.1f}% complete" if isinstance(self.progress, float) else self.progress) + 
-                f"\nscore: {pretty_print_number(self.score)}" + 
-                f"\n{self.score / self.goal * 100:5.1f}% of goal" + 
+                (f"\n{100 * self.progress:5.1f}% complete" if isinstance(self.progress, float) else str(self.progress)) + 
+                f"\nscore: {pretty_print_number(score)}" + 
+                f"\ntime remaining: {pretty_print_time(self.state.time - score_t)}" + 
+                f"\n{score / goal * 100:5.1f}% of goal" + 
                 "\n" + print_plan(self.state, self.moves)
             )
             self.last_frame = time()
@@ -103,18 +107,31 @@ class Blank(Dashboard):
         pass
             
 def move_to_str(move):
-    """
-    hard coding these enum values, will need to rewrite this if those values change :s
-    """
-    mapping = {0 : "c", 1 : "r", 2 : "s", 3 : "d", 4 : "w"}
-    return f"{mapping[move['target']]}{move['index']}{move['level']}"
+    mapping = {
+        int(move_target.CHAMPION) : "c",
+        int(move_target.RESOURCE) : "r",
+        int(move_target.SPEED)    : "s",
+        int(move_target.SPEED2)   : "z",
+        int(move_target.DAMAGE)   : "d",
+        int(move_target.TOGGLE)   : "t",
+        int(move_target.WAIT)     : "w"
+    }
+    return f"{mapping[move['target']]}{move['index']}{move['meta']}"
 
 def str_to_move(s):
-    mapping = {"c" : 0, "r" : 1, "s" : 2, "d" : 3, "w" : 4}
+    mapping = {
+        "c" : int(move_target.CHAMPION),
+        "r" : int(move_target.RESOURCE),
+        "s" : int(move_target.SPEED),
+        "z" : int(move_target.SPEED2),
+        "d" : int(move_target.DAMAGE),
+        "t" : int(move_target.TOGGLE),
+        "w" : int(move_target.WAIT)    
+    }
     if s[0] != "w":
-        return {"target": mapping[s[0]], "index": int(s[1]), "level": int(s[2])}
+        return {"target": mapping[s[0]], "index": int(s[1]), "meta": int(s[2])}
     else:
-        return {"target": 4, "index": int(s[1:]), "level": 0}
+        return {"target": int(move_target.WAIT), "index": 0, "meta": int(s[2:])}
 
 def str_to_moves(s):
     moves = []
@@ -125,18 +142,18 @@ def str_to_moves(s):
 def moves_to_str(moves):
      return "".join(list(map(move_to_str, moves)))
         
-def print_plan(root, moves):
+def print_plan(root, moves, include_urgency = False):
     """
     A representation of a move sequence
     """
     event_info = get_event_info()
     plan = ""
     state = State().copy(root)
-    goal_reached_printed = False
-    goal_projected_printed = False
-    COLUMN_WIDTHS = [13, 40, 17, 32, 7]
-    WAIT_MOVE = {"target" : move_target.WAIT, "index": 0, "level": 0}
-    Colors.LEGEND = [Colors.BLUE, Colors.GREEN, Colors.RED, Colors.GOLD]
+    goal_reached_printed = state.resources['damage'] >= event_info['goal']
+    goal_projected_printed = state.resources['damage'] >= event_info['goal']
+    COLUMN_WIDTHS = [13, 40, 19, 32, 7]
+    WAIT_MOVE = {"target" : move_target.WAIT, "index": 0, "meta": 0}
+    LEGEND = [Colors.BLUE, Colors.GREEN, Colors.RED, Colors.GOLD]
 
 
     for i, header_name in enumerate(["Time", "Resources", "Upgrade", "Cost", "Urgency"]):
@@ -144,21 +161,22 @@ def print_plan(root, moves):
     plan += "\n" + "-"*(sum(COLUMN_WIDTHS) + len(COLUMN_WIDTHS) - 1) + "|\n"
     goal_time = state.time_moves(moves)
     for i, move in enumerate(moves):
-        if move["target"] != move_target.WAIT:
-            duration = state.get_duration(move)
-        else:
-            duration = move["index"]
-            if duration == 0:
-                duration = state.time
+        duration = state.get_duration(move)
         if duration >= state.time:
             move = WAIT_MOVE
             duration = state.time
         resources = add_resources(state.resources, mul_resources(state.resources_per_second, duration))
         projected_damage = state.resources["damage"] + state.resources_per_second["damage"] * state.time
-        wait_time = State().copy(root).time_moves(
-            moves[:i] + [{'target' : move_target.WAIT, 'index': 3600 + int(duration), 'level': 0}] + moves[i:]
-        )
-        urgency = (wait_time - goal_time) / 3600
+        if include_urgency:
+            wait_time = State().copy(root).time_moves(
+                moves[:i] + [{'target' : move_target.WAIT, 'index': 0, 'meta': 3600 + int(duration)}] + moves[i:]
+            )
+            urgency = (wait_time - goal_time) / 3600.
+            # there's some bug that gives huge urgency, still haven't figured that one out
+            if urgency > 1:
+                urgency = 1
+        else:
+            urgency = 0
         if not goal_projected_printed and projected_damage > event_info["goal"]:
             goal_projected_printed = True
             plan += (
@@ -179,37 +197,64 @@ def print_plan(root, moves):
                 " "* COLUMN_WIDTHS[3] + "|" + " " * COLUMN_WIDTHS[4] + "|\n"
             )
         if move["target"] == move_target.CHAMPION:
-            upgrade = f"{move['index'] + 1}. {event_info['champion_names'][move['index']].decode()}"
-            cost = event_info["champion_upgrade_costs"][move["index"]][move["level"]]
+            upgrade = f"{move['index'] + 1}. {event_info['champions'][move['index']]['name'].decode()}"
+            cost = event_info["champions"][move["index"]]["upgrade_costs"][move["meta"]]
 
         elif move["target"] == move_target.RESOURCE:
             upgrade = (
-                Colors.LEGEND[move['index']] + 
-                f"{event_info['resource_names'][move['index']].decode():<{COLUMN_WIDTHS[2]}}" + 
+                LEGEND[move['index']] + 
+                f"{event_info['resources'][move['index']]['name'].decode():<{COLUMN_WIDTHS[2]}}" + 
                 Colors.RESET
             )
-            cost = event_info["resource_upgrade_costs"][move["index"]][move["level"]]
+            cost = event_info["resources"][move["index"]]["upgrade_costs"][move["meta"]]
         elif move["target"] == move_target.SPEED:
-            upgrade = Colors.rainbow(f"{'speed':<{COLUMN_WIDTHS[2]}}")
-            cost = event_info["speed_upgrade_costs"][move["level"]]
+            upgrade = Colors.rainbow(f"{event_info['speed']['name'].decode():<{COLUMN_WIDTHS[2]}}")
+            cost = event_info["speed"]["upgrade_costs"][move["meta"]]
+        elif move["target"] == move_target.SPEED2:
+            upgrade = Colors.rainbow(f"{event_info['speed2']['name'].decode():<{COLUMN_WIDTHS[2]}}")
+            cost = event_info["speed2"]["upgrade_costs"][move["meta"]]
         elif move["target"] == move_target.DAMAGE:
-            upgrade = Colors.color(f"{'damage':{COLUMN_WIDTHS[2]}}", 'bold')
-            cost = event_info["damage_upgrade_costs"][move["level"]]
+            upgrade = Colors.color(f"{event_info['damage']['name'].decode():{COLUMN_WIDTHS[2]}}", 'bold')
+            cost = event_info["damage"]["upgrade_costs"][move["meta"]]
         elif move["target"] == move_target.WAIT:
-            upgrade = "wait"
+            upgrade = None
+            cost = Resources()
+        elif move["target"] == move_target.TOGGLE:
+            toggle_direction = move["meta"]
+            if toggle_direction == 0:
+                target_resources = event_info['champions'][move['index']]['revenue'][0]
+            else:
+                target_resources = event_info['champions'][move['index']]['revenue_toggle'][0]
+            for color in ['blue', 'green', 'red', 'gold']:
+                if target_resources[color] > 0:
+                    color_f = lambda x: Colors.color(x, color)
+                    break
+            else:
+                color_f = lambda x: Colors.color(x, 'bold')
+            
+            
+            if toggle_direction == 0:
+                s = f"<<{event_info['champions'][move['index']]['name'].decode()}<<"
+                c = "<"
+            else:
+                s = f">>{event_info['champions'][move['index']]['name'].decode()}>>"
+                c = "<"
+            s = f"{s:{c}{COLUMN_WIDTHS[2]}}"
+            upgrade = color_f(s)
             cost = Resources()
         else:
             raise
         state.apply_move(move)
         if state.time <= 0 and move["target"] == move_target.WAIT:
             break
-        plan += (
-            f"{pretty_print_time(state.time):{COLUMN_WIDTHS[0]}}|" + 
-            f"{print_resources(resources)}|" + 
-            f"{upgrade:{COLUMN_WIDTHS[2]}}|" + 
-            f"{print_resources(cost, 0)}|" +
-            f"{f'{int(100 * urgency):3d}%':^{COLUMN_WIDTHS[4]}}|\n"
-        )
+        if upgrade is not None:
+            plan += (
+                f"{pretty_print_time(state.time):{COLUMN_WIDTHS[0]}}|" + 
+                f"{print_resources(resources)}|" + 
+                f"{upgrade:{COLUMN_WIDTHS[2]}}|" + 
+                f"{print_resources(cost, 0)}|" +
+                f"{f'{int(100 * urgency):3d}%':^{COLUMN_WIDTHS[4]}}|\n"
+            )
     plan += (
         f"{'End of Event':^{COLUMN_WIDTHS[0]}}|" +
         print_resources(state.resources) + "|" + 
