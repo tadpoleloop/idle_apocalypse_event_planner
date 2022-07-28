@@ -1,6 +1,8 @@
 *.ipynb
+!gui.ipynb
 *.c
 *.pyd
 *.html
+*.csv
 __pycache__
 build/
