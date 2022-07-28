@@ -73,6 +73,7 @@ class Dashboard:
         self.last_frame = time()
         self.fps = 12
         self.state = State()
+        self.context = None
     def set_progress(self, progress):
         self.progress = progress
     def set_step(self, step):
@@ -83,23 +84,29 @@ class Dashboard:
         self.event = event
     def set_state(self, state):
         self.state = State().copy(state)
+    def set_context(self, context):
+        self.context = context
     def show(self, force = False):
         if time() - self.last_frame > 1/self.fps or force:
-            clear_output(wait = True)
             score = self.state.score_moves(self.moves)
             score_t = self.state.time_moves(self.moves)
             goal = get_event_info()["goal"]
-            print(
-                f"event: {self.event}" +
-                f"\ngem level: {self.state.gem_level}" +
-                f"\ngoal: {pretty_print_number(goal)}" + 
-                f"\n{self.step}" + 
-                (f"\n{100 * self.progress:5.1f}% complete" if isinstance(self.progress, float) else str(self.progress)) + 
-                f"\nscore: {pretty_print_number(score)}" + 
-                f"\ntime remaining: {pretty_print_time(self.state.time - score_t)}" + 
-                f"\n{score / goal * 100:5.1f}% of goal" + 
-                "\n" + print_plan(self.state, self.moves)
-            )
+            s = "\n".join([
+                f"event: {self.event}",
+                f"gem level: {self.state.gem_level}",
+                f"goal: {pretty_print_number(goal)}",
+                f"{self.step}",
+                f"{100 * self.progress:5.1f}% complete" if isinstance(self.progress, float) else str(self.progress),
+                f"time remaining: {pretty_print_time(self.state.time - score_t)}",
+                f"score: {pretty_print_number(score)}",
+                f"{score / goal * 100:5.1f}% of goal",
+                print_plan(self.state, self.moves)
+            ])
+            if self.context is not None:
+                self.context.clear_print(s)
+            else:
+                clear_output(wait = True)
+                print(s)
             self.last_frame = time()
             
 class Blank(Dashboard):
