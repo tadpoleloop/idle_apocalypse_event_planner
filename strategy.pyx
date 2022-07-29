@@ -133,6 +133,7 @@ cdef class Strategy:
         UpgradeToggle upgrades[120]
         int n_upgrades
         Score_mode score_mode
+        int stop
         
     def __init__(self, state = None):
             
@@ -407,6 +408,8 @@ cdef class Strategy:
         for champion_i in range(event_info.n_champions):
             n_toggles += event_info.champions[champion_i].has_swap
         score = self.score(toggle_penalty = toggle_penalty)
+        if self.stop:
+            return score
         if depth == 0:
             return score
         improved = True
@@ -430,6 +433,10 @@ cdef class Strategy:
                     scan_swaps,
                     scan_toggles
                 )
+                if self.stop:
+                    break
+                if new_score == -1:
+                    raise
                 if new_score > score:
                     score = new_score
                     best_strategy.copy(strategy)
@@ -457,6 +464,8 @@ cdef class Strategy:
                     scan_swaps,
                     scan_toggles
                 )
+                if self.stop:
+                    break
                 if swap_score == -1:
                     raise
                 if swap_score > score:
@@ -466,6 +475,8 @@ cdef class Strategy:
                     improved = True
             if scan_toggles:
                 for upgrade_i in range(self.n_upgrades):
+                    if self.stop:
+                        break
                     for champion_i in range(event_info.n_champions):
                         if event_info.champions[champion_i].has_swap:
                             count += 1
@@ -482,11 +493,17 @@ cdef class Strategy:
                                 scan_swaps,
                                 scan_toggles
                             )
+                            if self.stop:
+                                break
+                            if toggle_score == -1:
+                                raise
                             if toggle_score > score:
                                 score = toggle_score
                                 best_strategy.copy(strategy)
                                 dashboard.set_moves(best_strategy.get_moves())
                                 improved = True
+            if self.stop:
+                break
             self.copy(best_strategy)
         return score
     
@@ -512,6 +529,8 @@ cdef class Strategy:
             int toggle_champions[MAX_CHAMPIONS]
         dashboard.set_moves(self.get_moves())
         score = self.swap_toggle_descent(1, Blank(), 0, toggle_penalty, 1, 1)
+        if self.stop:
+            return score
         if score == -1:
             raise
         count = 0
@@ -538,6 +557,8 @@ cdef class Strategy:
                 else:
                     return score #?
             new_score = strategy.swap_toggle_descent(1, Blank(), 0, toggle_penalty, 1, 1)
+            if self.stop:
+                return score
             if new_score == -1:
                 raise
             if new_score > score:
@@ -631,11 +652,17 @@ cdef class Strategy:
                     dashboard = dashboard,
                     toggle_penalty = toggle_penalty
                 )
+                if self.stop:
+                    break
                 if new_score == -1: #exception raised
-                    raise
+                    break
                 new_score = self.score()
                 if new_score > score and repeat_if_improved:
                     break #need to break this loop first to repeat the outer loop
+            if self.stop:
+                break
+            if new_score == -1:
+                raise
             if new_score > score:
                 score = new_score
                 if repeat_if_improved:
@@ -648,6 +675,8 @@ cdef class Strategy:
                 root_level = True,
                 toggle_penalty = toggle_penalty
             )
+            if self.stop:
+                break
             if new_score == -1:
                 raise
             if new_score > score:
@@ -655,8 +684,10 @@ cdef class Strategy:
                 if repeat_if_improved:
                     repeat = True
                     continue
-
-        dashboard.set_step("finished")
+        if self.stop:
+            dashboard.set_step("interrupted")
+        else:
+            dashboard.set_step("finished")
         dashboard.set_progress("")
         dashboard.set_moves(self.get_moves())
         dashboard.show(force = True)
