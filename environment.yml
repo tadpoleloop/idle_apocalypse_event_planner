@@ -1,0 +1,8 @@
+channels:
+- defaults
+dependencies:
+- pandas
+- ipywidgets
+- jupyter
+- voila
+- cython
