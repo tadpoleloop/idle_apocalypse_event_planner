@@ -1,4 +1,5 @@
 *.ipynb
+!gui.ipynb
 *.c
 *.pyd
 *.html
