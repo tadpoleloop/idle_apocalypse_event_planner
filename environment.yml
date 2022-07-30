@@ -1,6 +1,7 @@
 channels:
 - defaults
 dependencies:
+- python=3.8
 - pandas
 - ipywidgets
 - jupyter
@@ -8,4 +9,4 @@ dependencies:
 - cython
 - pip
 - pip:
-  - -e .
+  - .
