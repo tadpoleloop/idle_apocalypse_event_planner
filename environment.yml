@@ -7,3 +7,5 @@ dependencies:
 - voila
 - cython
 - pip
+- pip:
+  - .
