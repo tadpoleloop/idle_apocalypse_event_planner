@@ -8,4 +8,4 @@ dependencies:
 - cython
 - pip
 - pip:
-  - .
+  - -e .
