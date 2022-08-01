@@ -25,6 +25,10 @@ A *small* change in this context is perturbing the plan by moving a few uppgrade
 
 There are a few reasons why this might be the case. The search algorithm starts with a random strategy, and then tries to improve that strategy. Different initial strategies may converge to different final strategies. In addition, the search algorithm only samples a few hundred random perturbations of nearby strategies before it is satisfied with the current strategy. It may also be the case that from this sample, it did not find an improvement one time, but found it another time
 
+## Why does it take so long to load?
+
+This server is deployed using [mybinder.org](mybinder.org). Whenever the codebase changes the entire environment needs to be rebuilt. But each machine on Kubernetes that is spun up to deliver this app also needs to download the build from a cache. This takes time. There are plans to move the server to keroku for quicker access.
+
 ## What is this planner good at?
 
 This planner excels at finding small improvements to a strategy
