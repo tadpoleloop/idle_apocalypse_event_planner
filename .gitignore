@@ -1,9 +1,9 @@
 *.ipynb
 !gui.ipynb
-!best_solutions.ipynb
 *.c
 *.pyd
 *.html
+!best_solutions.html
 *.csv
 *.egg-info
 __pycache__
