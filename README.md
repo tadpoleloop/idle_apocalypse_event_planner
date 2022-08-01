@@ -55,4 +55,4 @@ I agree! Do you want to contribute? Put up a PR!
 
 # Full Plans
 
-[Here](best_solutions.ipynb) is a compilation of precompiled plans.
+[Here](https://tadpoleloop.github.io/idle_apocalypse_event_planner/best_solutions.html) is a compilation of precompiled plans.
