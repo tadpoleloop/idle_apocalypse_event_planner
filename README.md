@@ -13,7 +13,7 @@ The simulation framework attempts to make a nearly 1-1 replica to the game's eve
 
 The tree-search engine first seeds the search with a random simulation, and then attempts to improve on that plan with a *small* change. This is repeated until it no longer can find a small change that improves on the plan.
 
-A *small* change in this context is perturbing the plan by moving a few uppgrades(toggles) earlier or later.
+A *small* change in this context is perturbing the plan by moving a few upgrades(toggles) earlier or later.
 
 # FAQ
 
