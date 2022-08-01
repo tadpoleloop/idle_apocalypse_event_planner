@@ -1,5 +1,6 @@
 *.ipynb
 !gui.ipynb
+!best_solutions.ipynb
 *.c
 *.pyd
 *.html
