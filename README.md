@@ -19,7 +19,7 @@ A *small* change, in this context, is perturbing the plan by moving a few upgrad
 
 ## How good is it? 
 
-[See for yourself!](gui.ipynb) It is certainly better than the author.
+[See for yourself!](https://mybinder.org/v2/gh/tadpoleloop/idle_apocalypse/HEAD?urlpath=voila%2Frender%2Fgui.ipynb) It is certainly better than the author.
 
 ## Why does it sometimes give a different plan with the same information?
 
