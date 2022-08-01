@@ -1,0 +1,9 @@
+*.ipynb
+!gui.ipynb
+*.c
+*.pyd
+*.html
+*.csv
+*.egg-info
+__pycache__
+build/
