@@ -31,6 +31,12 @@ You can run the planner several times if you are not satisfied with the result.
 
 This server is deployed using [mybinder.org](https://mybinder.org). Whenever the codebase changes, the entire environment needs to be rebuilt. But each machine on Kubernetes that is spun up to deliver this app also needs to download the build from a cache. This takes time. There are plans to move the server to keroku for quicker access.
 
+## What is *urgency*?
+
+***Urgency*** is an arbitrary measure of how important an upgrade is to upgrade immediately. Roughly, it is proportionally how much longer it will take to reach the goal if that upgrade is delayed. E.g. if the urgency is 50% and you are one hour late to upgrade, then the event will take approximately half an hour longer to complete. Due to the nature of how it is calculated, ***urgency*** in events with toggles (*Lost in Time* and *Through the Portal*) may not be accurately reflected.
+
+Feel completely free to ignore that column all-together.
+
 ## What is this planner good at?
 
 This planner excels at finding small improvements to a strategy.
@@ -49,4 +55,4 @@ I agree! Do you want to contribute? Put up a PR!
 
 # Full Plans
 
-[Here](best_solutions.ipynb) is a compilation of precompiled plans.
+[Here](https://tadpoleloop.github.io/idle_apocalypse_event_planner/best_solutions.html) is a compilation of precompiled plans.
