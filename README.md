@@ -9,11 +9,11 @@ There are two important parts to this solver.
 1. A simulation framework  
 1. A tree-search engine
 
-The simulation framework attempts to make a nearly 1-1 replica to the game's event framework. One noteable difference is that the simulation *averages out* the discrete nature of how creatures produce resources. In the game the creates produce resources in a batch every few seconds. The simulation framework instead produces a steady rate of resources. This is to simplify the model to make creating a plan simpler
+The simulation framework attempts to make a nearly 1-1 replica to the game's event framework. One noteable difference is that the simulation *averages out* the discrete nature of how creatures produce resources. In the game, the creatures produce resources in a batch every few seconds. In the simulation framework, the creatures produce a steady rate of resources. This is to simplify the model to make creating a plan simpler.
 
-The tree-search engine first seeds the search with a random simulation, and then attempts to improve on that plan with a *small* change. This is repeated until it no longer can find a small change that improves on the plan.
+The tree-search engine first seeds the search with a random simulation, and then attempts to improve on that plan with a *small* change. This is repeated until it can no longer find a small change that improves on the plan.
 
-A *small* change in this context is perturbing the plan by moving a few upgrades(toggles) earlier or later.
+A *small* change, in this context, is perturbing the plan by moving a few upgrades(toggles) earlier or later.
 
 # FAQ
 
@@ -23,11 +23,13 @@ A *small* change in this context is perturbing the plan by moving a few upgrades
 
 ## Why does it sometimes give a different plan with the same information?
 
-There are a few reasons why this might be the case. The search algorithm starts with a random strategy, and then tries to improve that strategy. Different initial strategies may converge to different final strategies. In addition, the search algorithm only samples a few hundred random perturbations of nearby strategies before it is satisfied with the current strategy. It may also be the case that from this sample, it did not find an improvement one time, but found it another time
+There are a few reasons why this might be the case. The search algorithm starts with a random strategy, and then tries to improve that strategy. Different initial strategies may converge to different final strategies. In addition, the search algorithm only samples a few hundred random similar strategies before it is satisfied with the current strategy. It may also be the case that from this sample, it did not find an improvement oon one run, but found an improvement on another run.
+
+You can run the planner several times if you are not satisfied with the result.
 
 ## Why does it take so long to load?
 
-This server is deployed using [mybinder.org](https://mybinder.org). Whenever the codebase changes the entire environment needs to be rebuilt. But each machine on Kubernetes that is spun up to deliver this app also needs to download the build from a cache. This takes time. There are plans to move the server to keroku for quicker access.
+This server is deployed using [mybinder.org](https://mybinder.org). Whenever the codebase changes, the entire environment needs to be rebuilt. But each machine on Kubernetes that is spun up to deliver this app also needs to download the build from a cache. This takes time. There are plans to move the server to keroku for quicker access.
 
 ## What is this planner good at?
 
