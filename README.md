@@ -31,7 +31,7 @@ This server is deployed using [mybinder.org](https://mybinder.org). Whenever the
 
 ## What is this planner good at?
 
-This planner excels at finding small improvements to a strategy
+This planner excels at finding small improvements to a strategy.
 
 ## What is this planner bad at?
 
@@ -39,7 +39,7 @@ This planner gives no guarantee to finding the best possible solution.
 
 ## I found a mistake / I have a suggestion!
 
-Good! The best way to contact me is on discord: @tadpole#3755
+Good! The best way to contact me is on discord: @tadpole#3755.
 
 ## Your code smells!
 
@@ -47,4 +47,4 @@ I agree! Do you want to contribute? Put up a PR!
 
 # Full Plans
 
-[Here](best_solutions.ipynb) is a compilation of precompiled plans
+[Here](best_solutions.ipynb) is a compilation of precompiled plans.
