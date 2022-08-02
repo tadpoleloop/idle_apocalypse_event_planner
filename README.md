@@ -23,7 +23,7 @@ A *small* change, in this context, is perturbing the plan by moving a few upgrad
 
 ## Why does it sometimes give a different plan with the same information?
 
-There are a few reasons why this might be the case. The search algorithm starts with a random strategy, and then tries to improve that strategy. Different initial strategies may converge to different final strategies. In addition, the search algorithm only samples a few hundred random similar strategies before it is satisfied with the current strategy. It may also be the case that from this sample, it did not find an improvement oon one run, but found an improvement on another run.
+There are a few reasons why this might be the case. The search algorithm starts with a random strategy, and then tries to improve that strategy. Different initial strategies may converge to different final strategies. In addition, the search algorithm only samples a few hundred random similar strategies before it is satisfied with the current strategy. It may also be the case that from this sample, it did not find an improvement on one run, but found an improvement on another run.
 
 You can run the planner several times if you are not satisfied with the result.
 
