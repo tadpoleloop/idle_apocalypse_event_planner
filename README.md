@@ -29,7 +29,7 @@ You can run the planner several times if you are not satisfied with the result.
 
 ## Why does it take so long to load?
 
-This server is deployed using [mybinder.org](https://mybinder.org). Whenever the codebase changes, the entire environment needs to be rebuilt. But each machine on Kubernetes that is spun up to deliver this app also needs to download the build from a cache. This takes time. There are plans to move the server to keroku for quicker access.
+This server is deployed using [mybinder.org](https://mybinder.org). Whenever the codebase changes, the entire environment needs to be rebuilt. But each machine on Kubernetes that is spun up to deliver this app also needs to download the build from a cache. This takes time. There are plans to move the server to heroku for quicker access.
 
 ## What is *urgency*?
 
