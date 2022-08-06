@@ -733,6 +733,28 @@ cdef class Strategy:
                 break
         self.from_moves(moves)
         return scores
+    
+    def anneal(self, temperature = 2, *args, **kwargs):
+        cdef:
+            Strategy strategy
+            State state
+            
+        strategy = Strategy()
+        strategy.copy(self)
+        state = State()
+        state.copy(self.state)
+        dashboard = kwargs.pop("dashboard", Dashboard())
+        event_name = dashboard.event
+        dashboard.set_event(event_name + f" @Temperature = {temperature}")
+        state.time *= temperature
+        swap_levels = kwargs.pop("swap_levels", 2)
+        strategy.plan(dashboard = dashboard, swap_levels = 1, *args, **kwargs)
+        dashboard.set_event(event_name)
+        self.from_moves(strategy.get_moves())
+        return self.plan(dashboard = dashboard, swap_levels = swap_levels, *args, **kwargs)
+        
+        
+        
         
     def show(self, include_urgency = False):
         return print_plan(self.state, self.get_moves(), include_urgency = include_urgency)
