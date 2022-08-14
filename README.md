@@ -56,3 +56,7 @@ I agree! Do you want to contribute? Put up a PR!
 # Full Plans
 
 [Here](https://tadpoleloop.github.io/idle_apocalypse_event_planner/best_solutions.html) is a compilation of precompiled plans.
+
+# Special Thanks
+
+To ***/u/lephtocc*** for many helpful chats about solving these events and for providing a much better plan for *sid in space* than my solver came up with
