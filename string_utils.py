@@ -86,7 +86,7 @@ class Dashboard:
         self.state = State().copy(state)
     def set_context(self, context):
         self.context = context
-    def show(self, force = False):
+    def show(self, force = False, include_urgency = False):
         if time() - self.last_frame > 1/self.fps or force:
             score = self.state.score_moves(self.moves)
             score_t = self.state.time_moves(self.moves)
@@ -100,7 +100,7 @@ class Dashboard:
                 f"time remaining: {pretty_print_time(self.state.time - score_t)}",
                 f"score: {pretty_print_number(score)}",
                 f"{score / goal * 100:5.1f}% of goal",
-                print_plan(self.state, self.moves)
+                print_plan(self.state, self.moves, include_urgency)
             ])
             if self.context is not None:
                 self.context.clear_print(s)
