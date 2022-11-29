@@ -203,7 +203,7 @@ def print_plan(root, moves, include_urgency = False):
                 " " * COLUMN_WIDTHS[0] + "|" + 
                 f"{pretty_print_time(end_time):{COLUMN_WIDTHS[0]}}|" + 
                 f"{print_resources(end_resources)}|" +
-                Colors.rainbow(f"{'goal reached':<{COLUMN_WIDTHS[4]}}") + "|" +
+                Colors.rainbow(f"{'goal reached':<{COLUMN_WIDTHS[3]}}") + "|" +
                 " "* COLUMN_WIDTHS[4] + "|" + " " * COLUMN_WIDTHS[5] + "|\n"
             )
         if move["target"] == move_target.CHAMPION:
