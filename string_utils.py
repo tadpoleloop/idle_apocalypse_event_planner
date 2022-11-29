@@ -156,14 +156,15 @@ def print_plan(root, moves, include_urgency = False):
     event_info = get_event_info()
     plan = ""
     state = State().copy(root)
+    previous_time = 0
     goal_reached_printed = state.resources['damage'] >= event_info['goal']
     goal_projected_printed = state.resources['damage'] >= event_info['goal']
-    COLUMN_WIDTHS = [13, 40, 19, 32, 7]
+    COLUMN_WIDTHS = [13, 13, 40, 19, 32, 7]
     WAIT_MOVE = {"target" : move_target.WAIT, "index": 0, "meta": 0}
     LEGEND = [Colors.BLUE, Colors.GREEN, Colors.RED, Colors.GOLD]
 
 
-    for i, header_name in enumerate(["Time", "Resources", "Upgrade", "Cost", "Urgency"]):
+    for i, header_name in enumerate(["Δ", "Time", "Resources", "Upgrade", "Cost", "Urgency"]):
         plan += f"{header_name:^{COLUMN_WIDTHS[i]}}" + "|" 
     plan += "\n" + "-"*(sum(COLUMN_WIDTHS) + len(COLUMN_WIDTHS) - 1) + "|\n"
     goal_time = state.time_moves(moves)
@@ -187,10 +188,11 @@ def print_plan(root, moves, include_urgency = False):
         if not goal_projected_printed and projected_damage > event_info["goal"]:
             goal_projected_printed = True
             plan += (
+                " " * COLUMN_WIDTHS[0] + "|" + 
                 f"{pretty_print_time(state.time):{COLUMN_WIDTHS[0]}}|" + 
                 f"{print_resources(state.resources)}|" +
-                Colors.rainbow(f"{'goal projected':<{COLUMN_WIDTHS[2]}}") + "|" + 
-                " " * COLUMN_WIDTHS[3] + "|" + " " * COLUMN_WIDTHS[4] + "|\n"
+                Colors.rainbow(f"{'goal projected':<{COLUMN_WIDTHS[3]}}") + "|" + 
+                " " * COLUMN_WIDTHS[4] + "|" + " " * COLUMN_WIDTHS[5] + "|\n"
             )
         if not goal_reached_printed and resources["damage"] > event_info["goal"]:
             goal_reached_printed = True
@@ -198,10 +200,11 @@ def print_plan(root, moves, include_urgency = False):
             end_time = state.time - time_to_goal
             end_resources = add_resources(state.resources, mul_resources(state.resources_per_second, time_to_goal))
             plan += (
+                " " * COLUMN_WIDTHS[0] + "|" + 
                 f"{pretty_print_time(end_time):{COLUMN_WIDTHS[0]}}|" + 
                 f"{print_resources(end_resources)}|" +
-                Colors.rainbow(f"{'goal reached':<{COLUMN_WIDTHS[2]}}") + "|" +
-                " "* COLUMN_WIDTHS[3] + "|" + " " * COLUMN_WIDTHS[4] + "|\n"
+                Colors.rainbow(f"{'goal reached':<{COLUMN_WIDTHS[4]}}") + "|" +
+                " "* COLUMN_WIDTHS[4] + "|" + " " * COLUMN_WIDTHS[5] + "|\n"
             )
         if move["target"] == move_target.CHAMPION:
             upgrade = f"{move['index'] + 1}. {event_info['champions'][move['index']]['name'].decode()}"
@@ -210,18 +213,18 @@ def print_plan(root, moves, include_urgency = False):
         elif move["target"] == move_target.RESOURCE:
             upgrade = (
                 LEGEND[move['index']] + 
-                f"{event_info['resources'][move['index']]['name'].decode():<{COLUMN_WIDTHS[2]}}" + 
+                f"{event_info['resources'][move['index']]['name'].decode():<{COLUMN_WIDTHS[3]}}" + 
                 Colors.RESET
             )
             cost = event_info["resources"][move["index"]]["upgrade_costs"][move["meta"]]
         elif move["target"] == move_target.SPEED:
-            upgrade = Colors.rainbow(f"{event_info['speed']['name'].decode():<{COLUMN_WIDTHS[2]}}")
+            upgrade = Colors.rainbow(f"{event_info['speed']['name'].decode():<{COLUMN_WIDTHS[3]}}")
             cost = event_info["speed"]["upgrade_costs"][move["meta"]]
         elif move["target"] == move_target.SPEED2:
-            upgrade = Colors.rainbow(f"{event_info['speed2']['name'].decode():<{COLUMN_WIDTHS[2]}}")
+            upgrade = Colors.rainbow(f"{event_info['speed2']['name'].decode():<{COLUMN_WIDTHS[3]}}")
             cost = event_info["speed2"]["upgrade_costs"][move["meta"]]
         elif move["target"] == move_target.DAMAGE:
-            upgrade = Colors.color(f"{event_info['damage']['name'].decode():{COLUMN_WIDTHS[2]}}", 'bold')
+            upgrade = Colors.color(f"{event_info['damage']['name'].decode():{COLUMN_WIDTHS[3]}}", 'bold')
             cost = event_info["damage"]["upgrade_costs"][move["meta"]]
         elif move["target"] == move_target.WAIT:
             upgrade = None
@@ -246,27 +249,31 @@ def print_plan(root, moves, include_urgency = False):
             else:
                 s = f">>{event_info['champions'][move['index']]['name'].decode()}>>"
                 c = "<"
-            s = f"{s:{c}{COLUMN_WIDTHS[2]}}"
+            s = f"{s:{c}{COLUMN_WIDTHS[3]}}"
             upgrade = color_f(s)
             cost = Resources()
         else:
             raise
+        previous_time = state.time
         state.apply_move(move)
+        previous_time = previous_time - state.time
         if state.time <= 0 and move["target"] == move_target.WAIT:
             break
         if upgrade is not None:
             plan += (
+                f"{pretty_print_time(previous_time):{COLUMN_WIDTHS[0]}}|" + 
                 f"{pretty_print_time(state.time):{COLUMN_WIDTHS[0]}}|" + 
                 f"{print_resources(resources)}|" + 
-                f"{upgrade:{COLUMN_WIDTHS[2]}}|" + 
+                f"{upgrade:{COLUMN_WIDTHS[3]}}|" + 
                 f"{print_resources(cost, 0)}|" +
-                f"{f'{int(100 * urgency):3d}%':^{COLUMN_WIDTHS[4]}}|\n"
+                f"{f'{int(100 * urgency):3d}%':^{COLUMN_WIDTHS[5]}}|\n"
             )
     plan += (
         f"{'End of Event':^{COLUMN_WIDTHS[0]}}|" +
+        " " * COLUMN_WIDTHS[1] + "|" + 
         print_resources(state.resources) + "|" + 
-        " " * COLUMN_WIDTHS[2] + "|" + 
-        " " * COLUMN_WIDTHS[3] + "|" +
-        " " * COLUMN_WIDTHS[4] + "|"
+        " " * COLUMN_WIDTHS[3] + "|" + 
+        " " * COLUMN_WIDTHS[4] + "|" +
+        " " * COLUMN_WIDTHS[5] + "|"
     )
     return plan
