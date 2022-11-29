@@ -262,7 +262,7 @@ def print_plan(root, moves, include_urgency = False):
         if upgrade is not None:
             plan += (
                 f"{pretty_print_time(previous_time):{COLUMN_WIDTHS[0]}}|" + 
-                f"{pretty_print_time(state.time):{COLUMN_WIDTHS[0]}}|" + 
+                f"{pretty_print_time(state.time):{COLUMN_WIDTHS[1]}}|" + 
                 f"{print_resources(resources)}|" + 
                 f"{upgrade:{COLUMN_WIDTHS[3]}}|" + 
                 f"{print_resources(cost, 0)}|" +
