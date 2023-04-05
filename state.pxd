@@ -24,6 +24,7 @@ cdef class State:
         Resources resources_per_second
         int ad_boost
         int gem_level
+        int boost_level
         int champion_levels[MAX_CHAMPIONS]
         bint toggles[MAX_CHAMPIONS]
         int resource_levels[MAX_RESOURCES]
