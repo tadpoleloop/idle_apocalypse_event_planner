@@ -306,7 +306,7 @@ cdef class State:
                         1. / self.event_info.champions[i].duration / (1 - speed)
                     )
                 )
-        self.resources_per_second.damage *= (1 + 0.25 * self.damage_level + self.boost_level)
+        self.resources_per_second.damage *= (1 + (0.25 * self.damage_level) + self.boost_level)
         
     cpdef void apply_move(self, Move move) except *:
         cdef int wait
