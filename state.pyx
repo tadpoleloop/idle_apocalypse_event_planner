@@ -90,6 +90,7 @@ cdef class State:
         self.resources_per_second = [0, 0, 0, 0, 0]
         self.ad_boost = 1
         self.gem_level = 0
+        self.boost_level = 0
         cdef int i
         for i in range(MAX_CHAMPIONS):
             self.champion_levels[i] = 0
@@ -113,6 +114,7 @@ cdef class State:
         self.resources_per_second = state.resources_per_second
         self.ad_boost = state.ad_boost
         self.gem_level = state.gem_level
+        self.boost_level = state.boost_level
         self.champion_levels = state.champion_levels
         self.toggles = state.toggles
         self.resource_levels = state.resource_levels
@@ -303,7 +305,7 @@ cdef class State:
                         1. / self.event_info.champions[i].duration / (1 - speed)
                     )
                 )
-        self.resources_per_second.damage *= (1 + 0.25 * self.damage_level)
+        self.resources_per_second.damage *= (1 + (0.25 * self.damage_level) + self.boost_level)
         
     cpdef void apply_move(self, Move move) except *:
         cdef int wait
