@@ -90,7 +90,7 @@ cdef class State:
         self.resources_per_second = [0, 0, 0, 0, 0]
         self.ad_boost = 1
         self.gem_level = 0
-        self.boost_level = 0`
+        self.boost_level = 0
         cdef int i
         for i in range(MAX_CHAMPIONS):
             self.champion_levels[i] = 0
