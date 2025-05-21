@@ -1,4 +1,4 @@
-# Event Planner Version 0.2
+# Event Planner Version 0.1
 ## What is it?
 
 This app allows you to input the current state of the event you are in and it will create an event plan for you. This plan consists of a schedule of upgrades (and possibly toggles for *lost in time* and *through the portal* events).
